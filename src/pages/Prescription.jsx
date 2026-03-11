@@ -3,191 +3,198 @@ import { useNavigate } from "react-router-dom"
 import "../css/prescription.css"
 
 const medicines = [
-"Paracetamol",
-"Ibuprofen",
-"Amoxicillin",
-"Cough Syrup",
-"Vitamin C"
+  "Paracetamol",
+  "Ibuprofen",
+  "Amoxicillin",
+  "Cough Syrup",
+  "Vitamin C"
 ]
 
 export default function Prescription(){
 
-const navigate = useNavigate()
+  const navigate = useNavigate()
 
-const [selected,setSelected] = useState({})
+  const [selected,setSelected] = useState({})
+  const [code,setCode] = useState("")
 
-const addMedicine = (med)=>{
+  const addMedicine = (med)=>{
 
-setSelected(prev=>{
+    setSelected(prev=>{
 
-const qty = prev[med] ? prev[med] + 1 : 1
+      const qty = prev[med] ? prev[med] + 1 : 1
 
-return {...prev,[med]:qty}
+      return {...prev,[med]:qty}
 
-})
+    })
 
-}
+  }
 
-const increaseQty = (med)=>{
-setSelected(prev=>({...prev,[med]:prev[med]+1}))
-}
+  const increaseQty = (med)=>{
+    setSelected(prev=>({...prev,[med]:prev[med]+1}))
+  }
 
-const decreaseQty = (med)=>{
+  const decreaseQty = (med)=>{
 
-setSelected(prev=>{
+    setSelected(prev=>{
 
-const qty = prev[med]-1
+      const qty = prev[med]-1
 
-if(qty<=0){
+      if(qty<=0){
 
-const copy={...prev}
+        const copy={...prev}
+        delete copy[med]
+        return copy
 
-delete copy[med]
+      }
 
-return copy
+      return {...prev,[med]:qty}
 
-}
+    })
 
-return {...prev,[med]:qty}
+  }
 
-})
+  const generateCode = async ()=>{
 
-}
+    if(Object.keys(selected).length === 0){
+      alert("Please select medicines first")
+      return
+    }
 
-const generateCode = async ()=>{
+    try{
 
-try{
+      const res = await fetch(
+        `${window.API_URL}/generate-prescription`,
+        {
+          method:"POST",
+          headers:{
+            "Content-Type":"application/json"
+          },
+          body:JSON.stringify({
+            medicines:selected
+          })
+        }
+      )
 
-const res = await fetch("http://localhost:7000/generate-prescription",{
+      const data = await res.json()
 
-method:"POST",
-headers:{
-"Content-Type":"application/json"
-},
+      setCode(data.code)
 
-body:JSON.stringify({
-medicines:selected
-})
+      alert("Prescription Code : " + data.code)
 
-})
+      setTimeout(()=>{
+        navigate("/dashboard")
+      },1000)
 
-const data = await res.json()
+    }catch(err){
 
-// print("Prescription Code : "+data.code)
+      console.error("Error:",err)
+      alert("Server error")
 
-/* Wait 2 seconds then go back to dashboard */
+    }
 
-setTimeout(()=>{
+  }
 
-navigate("/dashboard")
+  return(
 
-},1000)
+  <div className="page">
 
-}catch(err){
+  <h1 className="title">Prescription Panel</h1>
 
-console.error("Error:",err)
+  <div className="container">
 
-}
+  {/* LEFT PANEL */}
 
-}
+  <div className="left">
 
-return(
+  <h2>Available Medicines</h2>
 
-<div className="page">
+  <div className="medicine-grid">
 
-<h1 className="title">Prescription Panel</h1>
+  {medicines.map((med)=>(
 
-<div className="container">
+  <div
+  key={med}
+  className="medicine-card"
+  onClick={()=>addMedicine(med)}
+  >
 
-{/* LEFT PANEL */}
+  💊 {med}
 
-<div className="left">
+  </div>
 
-<h2>Available Medicines</h2>
+  ))}
 
-<div className="medicine-grid">
+  </div>
 
-{medicines.map((med)=>(
+  </div>
 
-<div
-key={med}
-className="medicine-card"
-onClick={()=>addMedicine(med)}
->
 
-💊 {med}
+  {/* RIGHT PANEL */}
 
-</div>
+  <div className="right">
 
-))}
+  <h2>Selected Medicines</h2>
 
-</div>
+  <div className="table">
 
-</div>
+  <div className="row header">
 
+  <span>Medicine</span>
 
-{/* RIGHT PANEL */}
+  <span style={{textAlign:"center"}}>Qty</span>
 
-<div className="right">
+  </div>
 
-<h2>Selected Medicines</h2>
+  {Object.keys(selected).length === 0 && (
 
-<div className="table">
+  <p className="empty">No medicines selected</p>
 
-<div className="row header">
+  )}
 
-<span>Medicine</span>
+  {Object.keys(selected).map((med)=>(
 
-<span style={{textAlign:"center"}}>Qty</span>
+  <div className="row" key={med}>
 
-</div>
+  <span>{med}</span>
 
+  <div className="qty">
 
-{Object.keys(selected).length === 0 && (
+  <button onClick={()=>decreaseQty(med)}>-</button>
 
-<p className="empty">No medicines selected</p>
+  <span className="qty-number">{selected[med]}</span>
 
-)}
+  <button onClick={()=>increaseQty(med)}>+</button>
 
+  </div>
 
-{Object.keys(selected).map((med)=>(
+  </div>
 
-<div className="row" key={med}>
+  ))}
 
-<span>{med}</span>
+  </div>
 
-<div className="qty">
 
-<button onClick={()=>decreaseQty(med)}>-</button>
+  <button
+  className="generate"
+  onClick={generateCode}
+  >
 
-<span className="qty-number">{selected[med]}</span>
+  Generate Prescription
 
-<button onClick={()=>increaseQty(med)}>+</button>
+  </button>
 
-</div>
+  {code && (
+    <div style={{marginTop:"20px",fontWeight:"bold"}}>
+      Prescription Code : {code}
+    </div>
+  )}
 
-</div>
+  </div>
 
-))}
+  </div>
 
-</div>
+  </div>
 
-
-<button
-className="generate"
-onClick={generateCode}
->
-
-Generate Prescription
-
-</button>
-
-</div>
-
-</div>
-
-</div>
-
-)
+  )
 
 }
