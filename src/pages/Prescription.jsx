@@ -53,45 +53,46 @@ export default function Prescription(){
 
   }
 
-const generateCode = async ()=>{
+  const generateCode = async ()=>{
 
-  try{
+    if(Object.keys(selected).length === 0){
+      alert("Please select medicines first")
+      return
+    }
 
-    const res = await fetch(
-      `${window.API_URL}/generate-prescription`,
-      {
-        method:"POST",
-        headers:{
-          "Content-Type":"application/json"
-        },
-        body:JSON.stringify({
-          medicines:selected
-        })
-      }
-    )
+    try{
 
-    const data = await res.json()
+      const res = await fetch(
+        `${window.API_URL}/generate-prescription`,
+        {
+          method:"POST",
+          headers:{
+            "Content-Type":"application/json"
+          },
+          body:JSON.stringify({
+            medicines:selected
+          })
+        }
+      )
 
-    const printContent = `
-Prescription Code : ${data.code}
+      const data = await res.json()
 
-Medicines:
-${Object.entries(selected).map(([m,q]) => `${m} x ${q}`).join("\n")}
-`
+      setCode(data.code)
 
-    const newWindow = window.open("", "", "width=400,height=600")
+      alert("Prescription Code : " + data.code)
 
-    newWindow.document.write("<pre>" + printContent + "</pre>")
+      setTimeout(()=>{
+        navigate("/dashboard")
+      },1000)
 
-    newWindow.document.close()
+    }catch(err){
 
-    newWindow.print()
+      console.error("Error:",err)
+      alert("Server error")
 
-  }catch(err){
-    console.error("Error:",err)
+    }
+
   }
-
-}
 
   return(
 
