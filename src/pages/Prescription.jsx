@@ -1,13 +1,26 @@
+
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import "../css/prescription.css"
 
 const medicines = [
-  "Paracetamol",
-  "Ibuprofen",
-  "Amoxicillin",
-  "Cough Syrup",
-  "Vitamin C"
+
+{id:1,name:"Paracetamol"},
+{id:2,name:"Ibuprofen"},
+{id:3,name:"Amoxicillin"},
+{id:4,name:"Cough Syrup"},
+{id:5,name:"Vitamin C"},
+{id:6,name:"Tablet 6"},
+{id:7,name:"Tablet 7"},
+{id:8,name:"Tablet 8"},
+{id:9,name:"Tablet 9"},
+{id:10,name:"Tablet 10"},
+{id:11,name:"Tablet 11"},
+{id:12,name:"Tablet 12"},
+{id:13,name:"Tablet 13"},
+{id:14,name:"Tablet 14"},
+{id:15,name:"Tablet 15"}
+
 ]
 
 export default function Prescription(){
@@ -17,42 +30,61 @@ export default function Prescription(){
   const [selected,setSelected] = useState({})
   const [code,setCode] = useState("")
 
-  const addMedicine = (med)=>{
+  // ADD MEDICINE
+  const addMedicine = (id,name)=>{
 
     setSelected(prev=>{
 
-      const qty = prev[med] ? prev[med] + 1 : 1
+      const current = prev[id]
 
-      return {...prev,[med]:qty}
-
-    })
-
-  }
-
-  const increaseQty = (med)=>{
-    setSelected(prev=>({...prev,[med]:prev[med]+1}))
-  }
-
-  const decreaseQty = (med)=>{
-
-    setSelected(prev=>{
-
-      const qty = prev[med]-1
-
-      if(qty<=0){
-
-        const copy={...prev}
-        delete copy[med]
-        return copy
-
+      if(!current){
+        return {...prev,[id]:{name:name,qty:1}}
       }
 
-      return {...prev,[med]:qty}
+      if(current.qty >= 3) return prev
+
+      return {...prev,[id]:{...current,qty:current.qty+1}}
 
     })
 
   }
 
+  // INCREASE
+  const increaseQty = (id)=>{
+
+    setSelected(prev=>{
+
+      const current = prev[id]
+
+      if(!current || current.qty >= 3) return prev
+
+      return {...prev,[id]:{...current,qty:current.qty+1}}
+
+    })
+
+  }
+
+  // DECREASE
+  const decreaseQty = (id)=>{
+
+    setSelected(prev=>{
+
+      const current = prev[id]
+      if(!current) return prev
+
+      if(current.qty === 1){
+        const copy = {...prev}
+        delete copy[id]
+        return copy
+      }
+
+      return {...prev,[id]:{...current,qty:current.qty-1}}
+
+    })
+
+  }
+
+  // GENERATE PRESCRIPTION
   const generateCode = async ()=>{
 
     if(Object.keys(selected).length === 0){
@@ -62,6 +94,13 @@ export default function Prescription(){
 
     try{
 
+      // convert to {id:qty} format for backend
+      const sendData = {}
+
+      Object.keys(selected).forEach(id=>{
+        sendData[id] = selected[id].qty
+      })
+
       const res = await fetch(
         `${window.API_URL}/generate-prescription`,
         {
@@ -70,7 +109,7 @@ export default function Prescription(){
             "Content-Type":"application/json"
           },
           body:JSON.stringify({
-            medicines:selected
+            medicines:sendData
           })
         }
       )
@@ -113,12 +152,12 @@ export default function Prescription(){
   {medicines.map((med)=>(
 
   <div
-  key={med}
+  key={med.id}
   className="medicine-card"
-  onClick={()=>addMedicine(med)}
+  onClick={()=>addMedicine(med.id,med.name)}
   >
 
-  💊 {med}
+  💊 {med.name}
 
   </div>
 
@@ -146,33 +185,41 @@ export default function Prescription(){
   </div>
 
   {Object.keys(selected).length === 0 && (
-
-  <p className="empty">No medicines selected</p>
-
+    <p className="empty">No medicines selected</p>
   )}
 
-  {Object.keys(selected).map((med)=>(
+  {Object.keys(selected).map((id)=>{
 
-  <div className="row" key={med}>
+    const med = selected[id]
 
-  <span>{med}</span>
+    return (
 
-  <div className="qty">
+    <div className="row" key={id}>
 
-  <button onClick={()=>decreaseQty(med)}>-</button>
+      <span>{med.name}</span>
 
-  <span className="qty-number">{selected[med]}</span>
+      <div className="qty">
 
-  <button onClick={()=>increaseQty(med)}>+</button>
+        <button onClick={()=>decreaseQty(id)}>-</button>
+
+        <span className="qty-number">{med.qty}</span>
+
+        <button
+        onClick={()=>increaseQty(id)}
+        disabled={med.qty >= 3}
+        >
+        +
+        </button>
+
+      </div>
+
+    </div>
+
+    )
+
+  })}
 
   </div>
-
-  </div>
-
-  ))}
-
-  </div>
-
 
   <button
   className="generate"
