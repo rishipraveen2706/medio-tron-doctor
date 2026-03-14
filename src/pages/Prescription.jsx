@@ -118,7 +118,7 @@ export default function Prescription(){
 
       setCode(data.code)
 
-      alert("Prescription Code : " + data.code)
+      // alert("Prescription Code : " + data.code)
 
       setTimeout(()=>{
         navigate("/dashboard")
